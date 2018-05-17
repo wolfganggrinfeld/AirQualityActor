@@ -1,0 +1,11 @@
+<settings>
+    <WarmUpIgnoreInSeconds>10</WarmUpIgnoreInSeconds>
+    <DoorChangeTimeoutInSeconds>10</DoorChangeTimeoutInSeconds>
+    <ActionCondition id='averagePM1OverLastMinuteExceededBy2.5Points'        type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm1List.assertSize(60)    ? false : pm1List.getAverage(60)    + 2.5 < pm1   ]]></ActionCondition>
+    <ActionCondition id='averagePM2_5OverLastMinuteExceededBy2.5Points'      type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm2_5List.assertSize(60)  ? false : pm2_5List.getAverage(60)  + 2.5 < pm2_5 ]]></ActionCondition>
+    <ActionCondition id='averagePM10OverLastMinuteExceededBy2.5Points'       type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm10List.assertSize(60)   ? false : pm10List.getAverage(60)   + 2.5 < pm10  ]]></ActionCondition>
+    <ActionCondition id='maximumModePM1OverLast10MinutesExceededBy3Points'   type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm1List.assertSize(60)    ? false : pm1List.getMaxMode(600)   + 3.0 < pm1   ]]></ActionCondition>
+    <ActionCondition id='maximumModePM2.5OverLast10MinutesExceededBy3Points' type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm2_5List.assertSize(60)  ? false : pm2_5List.getMaxMode(600) + 3.0 < pm2_5 ]]></ActionCondition>
+    <ActionCondition id='maximumModePM10OverLast10MinutesExceededBy3Points'  type='close' action='cmd /c closeDoor.bat' ><![CDATA[! pm10List.assertSize(60)   ? false : pm10List.getMaxMode(600)  + 3.0 < pm10  ]]></ActionCondition>
+    <ActionCondition id='minimumModePmEqualOrBelow'                          type='open'  action='cmd /c openDoor.bat'  ><![CDATA[! pm1List.assertSize(1800)  ? false : pm1 - 1.0 < pm1List.getMinMode(3600) && pm2_5 - 1.0 < pm2_5List.getMinMode(3600) && pm10 - 1.0 > pm10List.getMinMode(3600)                ]]></ActionCondition>
+</settings>
