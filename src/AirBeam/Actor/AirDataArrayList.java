@@ -36,6 +36,14 @@ public class AirDataArrayList extends ArrayList<Float> {
         return sList.stream().reduce(0f, (result,next) -> result + (next/(float)elements));
     }
 
+    public float getStdDev(int elements){
+        final List<Float> sList = getSubList( elements );
+        float average = sList.stream().reduce(0f, (result,next) -> result + (next/(float)elements));
+        float total = sList.stream().reduce(0f, (result,next) -> result + (average - Math.abs(next)) * (average - Math.abs(next)));
+        float deviation = (float)Math.sqrt(total/(float)elements);
+        return deviation;
+    }
+
     private List<Float> getModes(final List<Float> numbers) {
             final Map<Float, Long> countFrequencies =
                          numbers.stream()
@@ -55,8 +63,8 @@ public class AirDataArrayList extends ArrayList<Float> {
         List<Float> subList = getSubList( elements );
         List<Float> modes =  getModes(subList);
         if(modes.size() <= 0) return 0.0f;
-        float res = modes.stream().reduce(Float.MAX_VALUE, (result,next) -> result < next ? result : next);
-        return res;
+        float mode = modes.stream().reduce(Float.MAX_VALUE, (result,next) -> result < next ? result : next);
+        return mode;
     }
 
     public float getMaxMode(int elements){
@@ -64,8 +72,30 @@ public class AirDataArrayList extends ArrayList<Float> {
         List<Float> subList = getSubList( elements );
         List<Float> modes =  getModes(subList);
         if(modes.size() <= 0) return 0.0f;
-        float res = modes.stream().reduce(0.0f, (result,next) -> result > next ? result : next);
-        return res;
+        float mode = modes.stream().reduce(Float.MIN_VALUE, (result,next) -> result > next ? result : next);
+        return mode;
+    }
+
+    public float getMinModeDeviation(int elements){
+        maxArraySize = elements > maxArraySize ? elements : maxArraySize;
+        List<Float> subList = getSubList( elements );
+        List<Float> modes =  getModes(subList);
+        if(modes.size() <= 0) return 0.0f;
+        float mode = modes.stream().reduce(Float.MAX_VALUE, (result,next) -> result < next ? result : next);
+        float total = subList.stream().reduce(0f, (result,next) -> result + (mode - Math.abs(next)) * (mode - Math.abs(next)));
+        float deviation = (float)Math.sqrt(total/(float)elements);
+        return deviation;
+    }
+
+    public float getMaxModeDeviation(int elements){
+        maxArraySize = elements > maxArraySize ? elements : maxArraySize;
+        List<Float> subList = getSubList( elements );
+        List<Float> modes =  getModes(subList);
+        if(modes.size() <= 0) return 0.0f;
+        float mode = modes.stream().reduce(Float.MIN_VALUE, (result,next) -> result > next ? result : next);
+        float total = subList.stream().reduce(0f, (result,next) -> result + (mode - Math.abs(next)) * (mode - Math.abs(next)));
+        float deviation = (float)Math.sqrt(total/(float)elements);
+        return deviation;
     }
 
     public List<Float> subList(int from, int to){
