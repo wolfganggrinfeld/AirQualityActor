@@ -3,7 +3,7 @@ package AirBeam.Actor;
 import java.util.List;
 
 public interface IAirBeamActionPredicate {
-    boolean areConditionsMet();
+    boolean areConditionsMet(int alreadyValidFor);
 
     void setF(float value);
     void setRH(float value);

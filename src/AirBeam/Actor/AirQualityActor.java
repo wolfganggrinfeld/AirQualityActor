@@ -174,6 +174,7 @@ public class AirQualityActor {
         public String actionType;
         public String action;
         public String conditionString;
+        public int validFor = 0;
         public IAirBeamActionPredicate condition;
 
         private ActionDefinition(){}
@@ -221,35 +222,55 @@ public class AirQualityActor {
             for (ActionDefinition actionDefinition : actionDefinitions) {
                 System.out.printf("%s : Condition: %s %s :%s / %s (buffersize:%d)",
                         new SimpleDateFormat("MM/dd/yyyy hh:mm:ss").format(new Date()),
-                        (actionDefinition.condition.areConditionsMet()?"True ":"False"),
+                        (actionDefinition.condition.areConditionsMet(actionDefinition.validFor)?"True ":"False"),
                         actionDefinition.id,
                         actionDefinition.conditionString
                                 .replace("pm1List.getAverage(60)", "pm1List.getAverage(60)[" + actionDefinition.condition.getPM1List().getAverage(60) + "]")
                                 .replace("pm2_5List.getAverage(60)", "pm2_5List.getAverage(60)[" + actionDefinition.condition.getPM2_5List().getAverage(60) + "]")
                                 .replace("pm10List.getAverage(60)", "pm10List.getAverage(60)[" + actionDefinition.condition.getPM10List().getAverage(60) + "]")
+                                .replace("pm1List.getStdDev(60)", "pm1List.getStdDev(60)[" + actionDefinition.condition.getPM1List().getStdDev(60) + "]")
+                                .replace("pm2_5List.getStdDev(60)", "pm2_5List.getStdDev(60)[" + actionDefinition.condition.getPM2_5List().getStdDev(60) + "]")
+                                .replace("pm10List.getStdDev(60)", "pm10List.getStdDev(60)[" + actionDefinition.condition.getPM10List().getStdDev(60) + "]")
                                 .replace("pm1List.getMinMode(3600)", "pm1List.getMinMode(3600)[" + actionDefinition.condition.getPM1List().getMinMode(3600) + "]")
                                 .replace("pm2_5List.getMinMode(3600)", "pm2_5List.getMinMode(3600)[" + actionDefinition.condition.getPM2_5List().getMinMode(3600) + "]")
                                 .replace("pm10List.getMinMode(3600)", "pm10List.getMinMode(3600)[" + actionDefinition.condition.getPM10List().getMinMode(3600) + "]")
                                 .replace("pm1List.getMaxMode(600)", "pm1List.getMaxMode(600)[" + actionDefinition.condition.getPM1List().getMaxMode(600) + "]")
                                 .replace("pm2_5List.getMaxMode(600)", "pm2_5List.getMaxMode(600)[" + actionDefinition.condition.getPM2_5List().getMaxMode(600) + "]")
                                 .replace("pm10List.getMaxMode(600)", "pm10List.getMaxMode(600)[" + actionDefinition.condition.getPM10List().getMaxMode(600) + "]")
+                                .replace("pm1List.getMaxModeDeviation(600)", "pm1List.getMaxModeDeviation(600)[" + actionDefinition.condition.getPM1List().getMaxModeDeviation(600) + "]")
+                                .replace("pm2_5List.getMaxModeDeviation(600)", "pm2_5List.getMaxModeDeviation(600)[" + actionDefinition.condition.getPM2_5List().getMaxModeDeviation(600) + "]")
+                                .replace("pm10List.getMaxModeDeviation(600)", "pm10List.getMaxModeDeviation(600)[" + actionDefinition.condition.getPM10List().getMaxModeDeviation(600) + "]")
+                                .replace("pm1List.getMinModeDeviation(600)", "pm1List.getMinModeDeviation(600)[" + actionDefinition.condition.getPM1List().getMinModeDeviation(600) + "]")
+                                .replace("pm2_5List.getMinModeDeviation(600)", "pm2_5List.getMinModeDeviation(600)[" + actionDefinition.condition.getPM2_5List().getMinModeDeviation(600) + "]")
+                                .replace("pm10List.getMinModeDeviation(600)", "pm10List.getMinModeDeviation(600)[" + actionDefinition.condition.getPM10List().getMinModeDeviation(600) + "]")
                                 .replace("pm1 ", "pm1[" + actionDefinition.condition.getPM1() + "] ")
                                 .replace("pm2_5 ", "pm2_5[" + actionDefinition.condition.getPM2_5() + "] ")
                                 .replace("pm10 ", "pm10[" + actionDefinition.condition.getPM10() + "] ")
+                                .replace("alreadyValidFor", "alreadyValidFor[" + actionDefinition.validFor + "] ")
                         ,
                         actionDefinition.actionType,
                         actionDefinition.condition.getPM1List().size()
                         );
                 System.out.println();
-                if (actionDefinition.condition.areConditionsMet()) {
-                    if (!(actionDefinition.actionType.toLowerCase().equals(currentState))) {
-                        if(System.currentTimeMillis() > lastChanged + (doorChangeTimeout * 1000)) {
-                            final String action = actionDefinition.action;
-                            AccessController.doPrivileged((PrivilegedAction) () -> {executeCommand(action);return null;}, globalControlContext);
-                            currentState = actionDefinition.actionType.toLowerCase();
-                            lastChanged = System.currentTimeMillis();
+                if (actionDefinition.condition.areConditionsMet(1000000)) {
+                    if (actionDefinition.condition.areConditionsMet(actionDefinition.validFor)) {
+                        if (!(actionDefinition.actionType.toLowerCase().equals(currentState))) {
+                            if("terminate".equals(actionDefinition.actionType.toLowerCase())){
+                                final String action = actionDefinition.action;
+                                AccessController.doPrivileged((PrivilegedAction) () -> {executeCommand(action);System.exit(0);return null;}, globalControlContext);
+                            }
+                            if(System.currentTimeMillis() > lastChanged + (doorChangeTimeout * 1000)) {
+                                final String action = actionDefinition.action;
+                                AccessController.doPrivileged((PrivilegedAction) () -> {executeCommand(action);return null;}, globalControlContext);
+                                currentState = actionDefinition.actionType.toLowerCase();
+                                lastChanged = System.currentTimeMillis();
+                            }
                         }
                     }
+                    actionDefinition.validFor ++;
+                }
+                else {
+                    actionDefinition.validFor = 0;
                 }
             }
 
@@ -305,11 +326,7 @@ public class AirQualityActor {
                         System.err.println("ActionCondition encountered without action type attribute - ignored");
                         continue;
                     }
-                    if(! (actionTypeNode.getNodeValue().toLowerCase().equals("open") || actionTypeNode.getNodeValue().toLowerCase().equals("close") )){
-                        System.err.println("ActionCondition encountered without correct action type attribute:" + actionTypeNode.getNodeValue() + " - ignored");
-                        continue;
-                    }
-
+                   
                     Node actionNode = map.getNamedItem("action");
                     if(actionNode == null ){
                         System.err.println("ActionCondition encountered without action attribute - ignored");
@@ -402,12 +419,11 @@ public class AirQualityActor {
             String className = "AirBeamActionPredicate_" + classIndexer.incrementAndGet();
             classNames.add(className);
             StringBuilder sbuilder = new StringBuilder();
-            sbuilder.append("package AirBeam.Actor; ");
-
-
+            sbuilder.append("package AirBeam.Actor; \n");
+            sbuilder.append("import java.util.*; \n");
             sbuilder.append("public class ");
             sbuilder.append(className);
-            sbuilder.append(" extends AirBeam.Actor.AirBeamActionPredicate { public boolean areConditionsMet() { return " + el + "; }}");
+            sbuilder.append(" extends AirBeam.Actor.AirBeamActionPredicate { public boolean areConditionsMet(int alreadyValidFor) { return " + el + "; }}");
             fileObjects.add(new JavaSourceFromString( className, sbuilder.toString()));
         });
 

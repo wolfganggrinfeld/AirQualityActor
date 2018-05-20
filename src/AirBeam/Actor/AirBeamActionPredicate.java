@@ -26,7 +26,7 @@ public abstract class AirBeamActionPredicate implements IAirBeamActionPredicate 
         boolean averagePM1ExceededBy10Percent =  pm1 * 1.1f > pm1List.getAverage(5); // check pm1 exceeds the average pm1 over the last 5 seconds worth
     }
 
-    public abstract boolean areConditionsMet();
+    public abstract boolean areConditionsMet(int alreadyValidFor);
 
     @Override
     public void setF(float value) {
